@@ -171,6 +171,9 @@ $(function($) {
   var modelExtender = {
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
+
+      var tunaNode = this.audioOutput = new tuna[this.tunaName]();
+      var audioInput = this.audioInput = tunaNode.input;
     }
   };
 
@@ -189,31 +192,35 @@ $(function($) {
   for (var mod in tunaModules) {
     var name = "tuna-"+mod.toLowerCase();
     var node = tunaModules[mod].node = Dataflow.node(name);
-    var tunaNode = new tuna[mod]();
-    var audioInput = tunaNode.input;
-    var extender = {
-      defaults: {
-        label: "",
-        type: name,
-        x: 200,
-        y: 100,
-        state: {}
+    // var tunaNode = new tuna[mod]();
+    // var audioInput = tunaNode.input;
+    var extender = _.extend(
+      {
+        defaults: {
+          label: "",
+          type: name,
+          x: 200,
+          y: 100,
+          state: {}
+        },
+        inputs:[
+          {
+            id: "in",
+            type: "audio"
+          }
+        ],
+        outputs:[
+          {
+            id: "out",
+            type: "audio"
+          }
+        ],
+        tunaName: mod
+        // audioOutput: tunaNode,
+        // audioInput: audioInput
       },
-      inputs:[
-        {
-          id: "in",
-          type: "audio"
-        }
-      ],
-      outputs:[
-        {
-          id: "out",
-          type: "audio"
-        }
-      ],
-      audioOutput: tunaNode,
-      audioInput: audioInput
-    };
+      modelExtender
+    );
     for (var prop in tuna[mod].prototype.defaults) {
       var tunaInput = tuna[mod].prototype.defaults[prop];
       var input = {};
