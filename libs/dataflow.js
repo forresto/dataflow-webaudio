@@ -1,8 +1,6 @@
-/*! dataflow.js - v0.0.1 - 2013-01-19 (3:00:12 PM GMT+0100)
+/*! dataflow.js - v0.0.1 - 2013-01-19 (6:07:22 PM GMT+0100)
 * https://github.com/meemoo/dataflow
 * Copyright (c) 2013 Forrest Oliphant; Licensed MIT, GPL */
-
-// Structure with guidance from http://weblog.bocoup.com/organizing-your-backbone-js-application-with-modules/
 
 (function(){
   var App = Backbone.Model.extend({
@@ -268,7 +266,8 @@ jQuery(function($) {
       label: "",
       type: "test",
       x: 200,
-      y: 100
+      y: 100,
+      state: {}
     },
     initialize: function() {
       this.parentGraph = this.get("parentGraph");
@@ -330,7 +329,8 @@ jQuery(function($) {
         label: this.get("label"),
         type: this.get("type"),
         x: this.get("x"),
-        y: this.get("y")
+        y: this.get("y"),
+        state: this.get("state")
       };
     },
     inputs:[
@@ -1395,14 +1395,8 @@ jQuery(function($) {
     unload: function(){
       // Stop any processes that need to be stopped
     },
-    inputs:[
-      // {
-      //   id: "input",
-      //   type: "all"
-      // }
-    ],
-    outputs:[
-    ]
+    inputs:[],
+    outputs:[]
   });
 
   Base.View = Node.View.extend({
@@ -1437,10 +1431,8 @@ jQuery(function($) {
       json.h = this.get("h");
       return json;
     },
-    inputs:[
-    ],
-    outputs:[
-    ]
+    inputs:[],
+    outputs:[]
   });
 
   BaseResizable.View = Base.View.extend({
