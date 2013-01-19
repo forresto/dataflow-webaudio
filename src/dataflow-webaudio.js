@@ -80,7 +80,7 @@ $(function($) {
       var oscNode = this.audioOutput = window.dataflowWebAudio.context.createOscillator();
       oscNode.frequency.value = 440;
       oscNode.detune.value = 0;
-      // oscNode.type = e.oscillatorType;
+      oscNode.type = "sine";
       // e.audioNode = oscNode;
       // if (e.outputConnections) {
       //   e.outputConnections.forEach(function(connection){  
@@ -139,7 +139,7 @@ $(function($) {
     },
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
-      this.connectable = window.dataflowWebAudio.context.destination;
+      this.audioInput = window.dataflowWebAudio.context.destination;
     },
     inputs:[
       {
@@ -248,17 +248,18 @@ $(function($) {
   Dataflow.on("edge:add", function(graph, edge){
     // Connect
     if (edge.source.get("type") === "audio" && edge.target.get("type") === "audio") {
-      if (edge.source.audioOutput && edge.target.audioInput) {
-        edge.source.audioOutput.connect(edge.target.audioInput);
+      if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioInput) {
+        edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioInput);
       }
     }
+    // console.log(edge.source.parentNode.audioOutput, edge.target.parentNode.audioInput);
   });
 
   Dataflow.on("edge:remove", function(graph, edge){
     // Disconnect
     if (edge.source.get("type") === "audio" && edge.target.get("type") === "audio") {
-      if (edge.source.audioOutput && edge.target.audioInput) {
-        edge.source.audioOutput.disconnect(edge.target.audioInput);
+      if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioInput) {
+        edge.source.parentNode.audioOutput.disconnect(edge.target.parentNode.audioInput);
       }
     }
   });
