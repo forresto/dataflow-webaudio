@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Web Audio API + Dataflow graph editor</title>
+  <link rel="stylesheet" href="dataflow.css">
+</head>
+
+<body>
+  <!-- Hello Dataflow -->
+  <div style="font-size:small; position:absolute; top:0; left:0;">
+    <a href="https://github.com/meemoo/dataflow">meemoo/dataflow</a>
+  </div>
+
+  <!-- Third-Party Libraries -->
+  <script src="libs/jquery.js"></script>
+  <script src="libs/jquery-ui.js"></script>
+  <script src="libs/underscore.js"></script>
+  <script src="libs/backbone.js"></script>
+  <script src="libs/tuna.js"></script>
+
+  <!-- Dataflow -->
+  <script src="libs/dataflow.js"></script> 
+  <script src="src/dataflow-webaudio.js"></script> 
+
+  <!-- Testing -->
+  <script>
+    $(function($) {
+      // Everything should be loaded now
+
+      // Log to console
+      Dataflow.debug = true;
+
+      // Load test graph
+      var g = Dataflow.loadGraph({});
+
+    });
+  </script>
+
+</body>
+</html>
