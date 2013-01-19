@@ -92,6 +92,7 @@ $(function($) {
       {
         id: "type",
         type: "string",
+        value: "sine",
         options: ["sine", "square", "sawtooth", "triangle", "custom"]
       },
       {
@@ -127,6 +128,43 @@ $(function($) {
     }
 
   });
+
+  var Gain = Dataflow.node("audio-gain");
+  Gain.Model = AudioBase.Model.extend({
+    defaults: {
+      label: "",
+      type: "audio-gain",
+      x: 200,
+      y: 100,
+      state: {}
+    },
+    initialize: function(){
+      AudioBase.Model.prototype.initialize.call(this);
+
+      var gainNode = this.audioInput = this.audioOutput = window.dataflowWebAudio.context.createGainNode();
+      gainNode.gain.value = 0.5;
+    },
+    inputs:[
+      {
+        id: "in",
+        type: "audio"
+      },
+      {
+        id: "gain",
+        type: "float",
+        value: 1.0,
+        min: 0,
+        max: 1.0
+      }
+    ],
+    outputs:[
+      {
+        id: "out",
+        type: "audio"
+      }
+    ]
+  });
+  Gain.View = AudioBase.View.extend({});
 
   var Destination = Dataflow.node("audio-destination");
   Destination.Model = AudioBase.Model.extend({
@@ -274,7 +312,7 @@ $(function($) {
 
   // Load test graph
   var g = Dataflow.loadGraph(
-    {"nodes":[{"id":4,"label":"audio-oscillator","type":"audio-oscillator","x":353,"y":225,"state":{}},{"id":10,"label":"tuna-compressor","type":"tuna-compressor","x":352,"y":461,"state":{"threshold":-20,"release":250,"makeupGain":1,"attack":1,"ratio":4,"knee":5,"automakeup":false,"bypass":true}},{"id":1,"label":"audio-buffersource","type":"audio-buffersource","x":355,"y":20,"state":{}},{"id":13,"label":"tuna-cabinet","type":"tuna-cabinet","x":579,"y":496,"state":{"makeupGain":1,"bypass":false}},{"id":15,"label":"tuna-overdrive","type":"tuna-overdrive","x":580,"y":672,"state":{"drive":1,"outputGain":1,"curveAmount":0.725,"algorithmIndex":0}},{"id":6,"label":"tuna-chorus","type":"tuna-chorus","x":580,"y":236,"state":{"feedback":0.4,"delay":0.0045,"depth":0.7,"rate":1.5,"bypass":true}},{"id":8,"label":"tuna-tremolo","type":"tuna-tremolo","x":579,"y":25,"state":{"intensity":0.3,"stereoPhase":0,"rate":5}},{"id":7,"label":"tuna-phaser","type":"tuna-phaser","x":807,"y":24,"state":{"rate":0.1,"depth":0.6,"feedback":0.7,"stereoPhase":40,"baseModulationFrequency":700}},{"id":11,"label":"tuna-convolver","type":"tuna-convolver","x":807,"y":561,"state":{"highCut":22050,"lowCut":20,"dryLevel":1,"wetLevel":1,"level":1}},{"id":3,"label":"tuna-delay","type":"tuna-delay","x":808,"y":306,"state":{"delayTime":100,"feedback":0.45,"cutoff":20000,"wetLevel":0.5,"dryLevel":1}},{"id":9,"label":"tuna-wahwah","type":"tuna-wahwah","x":1034,"y":20,"state":{"automode":true,"baseFrequency":0.5,"excursionOctaves":2,"sweep":0.2,"resonance":10,"sensitivity":0.5}},{"id":2,"label":"audio-destination","type":"audio-destination","x":1035,"y":571,"state":{}},{"id":14,"label":"tuna-filter","type":"tuna-filter","x":1035,"y":307,"state":{"frequency":800,"Q":1,"gain":0,"bypass":true,"filterType":1}}],"edges":[]}
+    {"nodes":[{"id":10,"label":"tuna-compressor","type":"tuna-compressor","x":352,"y":461,"state":{"threshold":-20,"release":250,"makeupGain":1,"attack":1,"ratio":4,"knee":5,"automakeup":false,"bypass":true}},{"id":4,"label":"audio-oscillator","type":"audio-oscillator","x":353,"y":225,"state":{}},{"id":1,"label":"audio-buffersource","type":"audio-buffersource","x":355,"y":20,"state":{}},{"id":13,"label":"tuna-cabinet","type":"tuna-cabinet","x":579,"y":496,"state":{"makeupGain":1,"bypass":false}},{"id":8,"label":"tuna-tremolo","type":"tuna-tremolo","x":579,"y":25,"state":{"intensity":0.3,"stereoPhase":0,"rate":5}},{"id":15,"label":"tuna-overdrive","type":"tuna-overdrive","x":580,"y":672,"state":{"drive":1,"outputGain":1,"curveAmount":0.725,"algorithmIndex":0}},{"id":6,"label":"tuna-chorus","type":"tuna-chorus","x":580,"y":236,"state":{"feedback":0.4,"delay":0.0045,"depth":0.7,"rate":1.5,"bypass":true}},{"id":7,"label":"tuna-phaser","type":"tuna-phaser","x":807,"y":24,"state":{"rate":0.1,"depth":0.6,"feedback":0.7,"stereoPhase":40,"baseModulationFrequency":700}},{"id":11,"label":"tuna-convolver","type":"tuna-convolver","x":807,"y":561,"state":{"highCut":22050,"lowCut":20,"dryLevel":1,"wetLevel":1,"level":1}},{"id":3,"label":"tuna-delay","type":"tuna-delay","x":808,"y":306,"state":{"delayTime":100,"feedback":0.45,"cutoff":20000,"wetLevel":0.5,"dryLevel":1}},{"id":9,"label":"tuna-wahwah","type":"tuna-wahwah","x":1034,"y":20,"state":{"automode":true,"baseFrequency":0.5,"excursionOctaves":2,"sweep":0.2,"resonance":10,"sensitivity":0.5}},{"id":2,"label":"audio-destination","type":"audio-destination","x":1038,"y":731,"state":{}},{"id":14,"label":"tuna-filter","type":"tuna-filter","x":1035,"y":307,"state":{"frequency":800,"Q":1,"gain":0,"bypass":true,"filterType":1}},{"id":5,"label":"audio-gain","type":"audio-gain","x":1036,"y":565,"state":{}}],"edges":[]}
   );
 
 });
