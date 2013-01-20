@@ -1,4 +1,4 @@
-/*! dataflow.js - v0.0.1 - 2013-01-19 (6:07:22 PM GMT+0100)
+/*! dataflow.js - v0.0.1 - 2013-01-20 (12:48:13 AM GMT+0100)
 * https://github.com/meemoo/dataflow
 * Copyright (c) 2013 Forrest Oliphant; Licensed MIT, GPL */
 
@@ -286,6 +286,13 @@ jQuery(function($) {
       this.inputs.parentNode = this;
       for(var i=0; i<inputArray.length; i++) {
         var input = inputArray[i];
+
+        // Save defaults to state
+        var state = this.get("state");
+        if (input.value !== undefined && state[input.id] === undefined) {
+          state[input.id] = input.value;
+        }
+
         input.parentNode = this;
         input = new Input.Model(input);
         this.inputs.add(input);
@@ -302,6 +309,19 @@ jQuery(function($) {
         this.outputs.add(output);
       }
 
+    },
+    setState: function(name, value){
+      var state = this.get("state");
+      state[name] = value;
+      if (this["input"+name]){
+        this["input"+name](value);
+      }
+      this.trigger("change:state:"+name);
+    },
+    setBang: function(name){
+      if (this["input"+name]){
+        this["input"+name]();
+      }
     },
     remove: function(){
       // Node removed from graph's nodes collection
@@ -844,6 +864,7 @@ jQuery(function($) {
   var template = 
     '<span class="plug in" title="drag to edit wire"></span>'+ //i18n
     '<span class="hole in" title="drag to make new wire"></span>'+ //i18n
+    '<span class="input-container in"></span>'+
     '<span class="label in"><%= label %></span>';
  
   Input.View = Backbone.View.extend({
@@ -858,7 +879,12 @@ jQuery(function($) {
       "dragstart .plug":  "changeEdgeStart",
       "drag      .plug":  "changeEdgeDrag",
       "dragstop  .plug":  "changeEdgeStop",
-      "drop":             "connectEdge"
+      "drop":             "connectEdge",
+      "change .input-int":     "inputInt",
+      "change .input-float":   "inputFloat",
+      "change .input-string":  "inputString",
+      "change .input-boolean": "inputBoolean",
+      "click  .input-bang":    "inputBang"
     },
     initialize: function() {
       this.$el.html(this.template(this.model.toJSON()));
@@ -880,6 +906,71 @@ jQuery(function($) {
         accept: ".plug.in, .hole.out",
         activeClassType: "droppable-hover"
       });
+
+      // Initialize direct input
+      var input;
+      var type = this.model.get("type");
+      var state = this.model.parentNode.get("state");
+      if (type === "int" || type === "float") {
+        var attributes = {};
+        if (this.model.get("min") !== undefined) {
+          attributes.min = this.model.get("min");
+        }
+        if (this.model.get("max") !== undefined) {
+          attributes.max = this.model.get("max");
+        }
+        if (type === "int") {
+          attributes.step = 1;
+        }
+        input = $('<input type="number" class="input input-number">')
+          .attr(attributes)
+          .addClass(type === "int" ? "input-int" : "input-float");
+        if (state[this.model.id] !== undefined){
+          // Use the stored state
+          input.val(state[this.model.id]);
+        } else if (this.model.get("value") !== undefined) {
+          // Use the default
+          input.val(this.model.get("value"));
+        }
+      } else if (type === "string") {
+        input = $('<input class="input input-string">');
+        if (state[this.model.id] !== undefined){
+          // Use the stored state
+          input.val(state[this.model.id]);
+        } else if (this.model.get("value") !== undefined) {
+          // Use the default
+          input.val(this.model.get("value"));
+        }
+      } else if (type === "boolean") {
+        input = $('<input type="checkbox" class="input input-boolean">');
+        if (state[this.model.id] !== undefined){
+          // Use the stored state
+          input.prop("checked", state[this.model.id]);
+        } else if (this.model.get("value") !== undefined) {
+          // Use the default
+          input.prop("checked", this.model.get("value"));
+        }
+      } else if (type === "bang") {
+        input = $('<button class="input input-bang">!</button>');
+      } 
+      if (input) {
+        this.$(".input-container").append(input);
+      }
+    },
+    inputInt: function(e){
+      this.model.parentNode.setState(this.model.id, parseInt($(e.target).val(), 10));
+    },
+    inputFloat: function(e){
+      this.model.parentNode.setState(this.model.id, parseFloat($(e.target).val()));
+    },
+    inputString: function(e){
+      this.model.parentNode.setState(this.model.id, $(e.target).val());
+    },
+    inputBoolean: function(e){
+      this.model.parentNode.setState(this.model.id, $(e.target).prop("checked"));
+    },
+    inputBang: function(){
+      this.model.parentNode.setBang(this.model.id);
     },
     render: function(){
       return this;

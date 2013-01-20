@@ -194,6 +194,10 @@ input[type="submit"],
   z-index: 9999;
 }
 
+.input-number {
+  width: 4em;
+}
+
 
 /*jqui*/
 

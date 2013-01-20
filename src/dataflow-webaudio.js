@@ -76,17 +76,30 @@ $(function($) {
     },
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
-
+      this.inputon();
+    },
+    inputfrequency: function(frequency) {
+      this.audioOutput.frequency.value = frequency;
+    },
+    inputdetune: function(detune) {
+      this.audioOutput.detune.value = detune;
+    },
+    inputon: function(){
       var oscNode = this.audioOutput = window.dataflowWebAudio.context.createOscillator();
-      oscNode.frequency.value = 440;
-      oscNode.detune.value = 0;
-      oscNode.type = "sine";
+      var state = this.get("state");
+      oscNode.frequency.value = state.frequency !== undefined ? state.frequency : 440;
+      oscNode.detune.value = state.detune !== undefined ? state.detune : 0;
+      oscNode.type = state.type !== undefined ? state.type : "sine";
       // e.audioNode = oscNode;
       // if (e.outputConnections) {
       //   e.outputConnections.forEach(function(connection){  
       //       oscNode.connect( connection.destination.audioNode ); });
       // }
       oscNode.noteOn(0);
+    },
+    inputoff: function(){
+      this.audioOutput.noteOff(0);
+      this.audioOutput = null;
     },
     inputs:[
       {
@@ -104,15 +117,16 @@ $(function($) {
         id: "detune",
         value: 0,
         type: "float"
-      },
-      {
-        id: "start",
-        type: "bang"
-      },
-      {
-        id: "stop",
-        type: "bang"
-      }
+      }//,
+      //TODO turn back on
+      // {
+      //   id: "on",
+      //   type: "bang"
+      // },
+      // {
+      //   id: "off",
+      //   type: "bang"
+      // }
     ],
     outputs:[
       {
@@ -122,11 +136,10 @@ $(function($) {
     ]
   });
   Oscillator.View = AudioBase.View.extend({
-    initialize: function(){
-      AudioBase.View.prototype.initialize.call(this);
-      this.$(".inner").text("start / stop");
-    }
-
+    // initialize: function(){
+    //   AudioBase.View.prototype.initialize.call(this);
+    //   this.$(".inner").text("start / stop");
+    // }
   });
 
   var Gain = Dataflow.node("audio-gain");
@@ -142,7 +155,11 @@ $(function($) {
       AudioBase.Model.prototype.initialize.call(this);
 
       var gainNode = this.audioInput = this.audioOutput = window.dataflowWebAudio.context.createGainNode();
-      gainNode.gain.value = 0.5;
+      var state = this.get("state");
+      gainNode.gain.value = state.gain !== undefined ? state.gain : 1.0;
+    },
+    inputgain: function(gain) {
+      this.audioInput.gain.value = gain;
     },
     inputs:[
       {
@@ -210,7 +227,7 @@ $(function($) {
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
 
-      var tunaNode = this.audioOutput = new tuna[this.tunaName]();
+      var tunaNode = this.audioOutput = new tuna[this.tunaName](this.get('state'));
       var audioInput = this.audioInput = tunaNode.input;
     }
   };
@@ -311,8 +328,10 @@ $(function($) {
 
 
   // Load test graph
-  var g = Dataflow.loadGraph(
-    {"nodes":[{"id":10,"label":"tuna-compressor","type":"tuna-compressor","x":352,"y":461,"state":{"threshold":-20,"release":250,"makeupGain":1,"attack":1,"ratio":4,"knee":5,"automakeup":false,"bypass":true}},{"id":4,"label":"audio-oscillator","type":"audio-oscillator","x":353,"y":225,"state":{}},{"id":1,"label":"audio-buffersource","type":"audio-buffersource","x":355,"y":20,"state":{}},{"id":13,"label":"tuna-cabinet","type":"tuna-cabinet","x":579,"y":496,"state":{"makeupGain":1,"bypass":false}},{"id":8,"label":"tuna-tremolo","type":"tuna-tremolo","x":579,"y":25,"state":{"intensity":0.3,"stereoPhase":0,"rate":5}},{"id":15,"label":"tuna-overdrive","type":"tuna-overdrive","x":580,"y":672,"state":{"drive":1,"outputGain":1,"curveAmount":0.725,"algorithmIndex":0}},{"id":6,"label":"tuna-chorus","type":"tuna-chorus","x":580,"y":236,"state":{"feedback":0.4,"delay":0.0045,"depth":0.7,"rate":1.5,"bypass":true}},{"id":7,"label":"tuna-phaser","type":"tuna-phaser","x":807,"y":24,"state":{"rate":0.1,"depth":0.6,"feedback":0.7,"stereoPhase":40,"baseModulationFrequency":700}},{"id":11,"label":"tuna-convolver","type":"tuna-convolver","x":807,"y":561,"state":{"highCut":22050,"lowCut":20,"dryLevel":1,"wetLevel":1,"level":1}},{"id":3,"label":"tuna-delay","type":"tuna-delay","x":808,"y":306,"state":{"delayTime":100,"feedback":0.45,"cutoff":20000,"wetLevel":0.5,"dryLevel":1}},{"id":9,"label":"tuna-wahwah","type":"tuna-wahwah","x":1034,"y":20,"state":{"automode":true,"baseFrequency":0.5,"excursionOctaves":2,"sweep":0.2,"resonance":10,"sensitivity":0.5}},{"id":2,"label":"audio-destination","type":"audio-destination","x":1038,"y":731,"state":{}},{"id":14,"label":"tuna-filter","type":"tuna-filter","x":1035,"y":307,"state":{"frequency":800,"Q":1,"gain":0,"bypass":true,"filterType":1}},{"id":5,"label":"audio-gain","type":"audio-gain","x":1036,"y":565,"state":{}}],"edges":[]}
-  );
+  var testGraph = {"nodes":[{"id":1,"label":"audio-buffersource","type":"audio-buffersource","x":355,"y":20,"state":{}},{"id":4,"label":"audio-oscillator","type":"audio-oscillator","x":369,"y":240,"state":{"type":"sine","detune":0,"frequency":280}},{"id":3,"label":"tuna-overdrive","type":"tuna-overdrive","x":664,"y":128,"state":{"drive":0.1,"outputGain":0.1,"algorithmIndex":0,"curveAmount":0.725}},{"id":5,"label":"audio-gain","type":"audio-gain","x":935,"y":103,"state":{"gain":0.1}},{"id":2,"label":"audio-destination","type":"audio-destination","x":957,"y":339,"state":{}}],"edges":[{"source":{"node":4,"port":"out"},"target":{"node":3,"port":"in"}},{"source":{"node":3,"port":"out"},"target":{"node":5,"port":"in"}},{"source":{"node":5,"port":"out"},"target":{"node":2,"port":"in"}}]};
+  // All nodes
+  // var testGraph = {"nodes":[{"id":10,"label":"tuna-compressor","type":"tuna-compressor","x":352,"y":461,"state":{"threshold":-20,"release":250,"makeupGain":1,"attack":1,"ratio":4,"knee":5,"automakeup":false,"bypass":true}},{"id":4,"label":"audio-oscillator","type":"audio-oscillator","x":353,"y":225,"state":{}},{"id":1,"label":"audio-buffersource","type":"audio-buffersource","x":355,"y":20,"state":{}},{"id":13,"label":"tuna-cabinet","type":"tuna-cabinet","x":579,"y":496,"state":{"makeupGain":1,"bypass":false}},{"id":8,"label":"tuna-tremolo","type":"tuna-tremolo","x":579,"y":25,"state":{"intensity":0.3,"stereoPhase":0,"rate":5}},{"id":15,"label":"tuna-overdrive","type":"tuna-overdrive","x":580,"y":672,"state":{"drive":1,"outputGain":1,"curveAmount":0.725,"algorithmIndex":0}},{"id":6,"label":"tuna-chorus","type":"tuna-chorus","x":580,"y":236,"state":{"feedback":0.4,"delay":0.0045,"depth":0.7,"rate":1.5,"bypass":true}},{"id":7,"label":"tuna-phaser","type":"tuna-phaser","x":807,"y":24,"state":{"rate":0.1,"depth":0.6,"feedback":0.7,"stereoPhase":40,"baseModulationFrequency":700}},{"id":11,"label":"tuna-convolver","type":"tuna-convolver","x":807,"y":561,"state":{"highCut":22050,"lowCut":20,"dryLevel":1,"wetLevel":1,"level":1}},{"id":3,"label":"tuna-delay","type":"tuna-delay","x":808,"y":306,"state":{"delayTime":100,"feedback":0.45,"cutoff":20000,"wetLevel":0.5,"dryLevel":1}},{"id":9,"label":"tuna-wahwah","type":"tuna-wahwah","x":1034,"y":20,"state":{"automode":true,"baseFrequency":0.5,"excursionOctaves":2,"sweep":0.2,"resonance":10,"sensitivity":0.5}},{"id":2,"label":"audio-destination","type":"audio-destination","x":1038,"y":731,"state":{}},{"id":14,"label":"tuna-filter","type":"tuna-filter","x":1035,"y":307,"state":{"frequency":800,"Q":1,"gain":0,"bypass":true,"filterType":1}},{"id":5,"label":"audio-gain","type":"audio-gain","x":1036,"y":565,"state":{}}],"edges":[]};
+  var g = Dataflow.loadGraph(testGraph);
+  g.trigger("change");
 
 });
