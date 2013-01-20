@@ -27,7 +27,7 @@ $(function($) {
       if (Dataflow.currentGraph) {
         var self = this;
         Dataflow.currentGraph.edges.each(function(edge){
-          if (edge.source.get("type")==="audio" && edge.source.parentNode===self) {
+          if ((edge.source.parentNode===self || edge.target.parentNode===self) && edge.source.get("type")==="audio") {
             if (edge.source.get("type") === "audio" && edge.target.get("type") === "audio") {
               if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioInput) {
                 edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioInput);
