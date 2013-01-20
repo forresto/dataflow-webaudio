@@ -175,11 +175,19 @@ $(function($) {
       //   e.outputConnections.forEach(function(connection){  
       //       oscNode.connect( connection.destination.audioNode ); });
       // }
-      oscNode.start(0);
+      if (oscNode.start !== undefined) {
+        oscNode.start(0);
+      } else {
+        oscNode.noteOn(0);
+      }
     },
     inputstop: function(){
       if (this.audioOutput) {
-        this.audioOutput.stop(0);
+        if (this.audioOutput.stop !== undefined) {
+          this.audioOutput.stop(0);
+        } else {
+          this.audioOutput.noteOff(0);
+        }
         this.audioOutput = null;
       }
     },
@@ -320,15 +328,16 @@ $(function($) {
     },
     setState: function(name, value){
       AudioBase.Model.prototype.setState.call(this, name, value);
-      // var state = this.get("state");
-      // state[name] = value;
-      // if (this["input"+name]){
-      //   this["input"+name](value);
-      // }
 
       if (!this["input"+name]) {
         if (this.audioOutput[name] !== undefined) {
-          this.audioOutput[name].value = value;
+          if (this.audioOutput[name].value !== undefined) {
+            this.audioOutput[name].value = value;
+          } else {
+            this.audioOutput[name] = value;
+          }
+        } else {
+          // ?
         }
       }
     }
