@@ -45,10 +45,14 @@ $(function($) {
     }
   });
   AudioBase.View = Base.View.extend({
-    // initialize: function(){
-    //   Base.View.prototype.initialize.call(this);
-    //   this.$(".inner").text("audio node!");
-    // }
+    initialize: function(){
+      Base.View.prototype.initialize.call(this);
+
+      //HACK
+      _.delay(function(){
+        this.$(".input-number").scrubber();
+      }, 10);
+    }
   });
 
   // Make basic audio modules
@@ -170,11 +174,6 @@ $(function($) {
 
       this.reconnect();
 
-      // e.audioNode = oscNode;
-      // if (e.outputConnections) {
-      //   e.outputConnections.forEach(function(connection){  
-      //       oscNode.connect( connection.destination.audioNode ); });
-      // }
       if (oscNode.start !== undefined) {
         oscNode.start(0);
       } else {
