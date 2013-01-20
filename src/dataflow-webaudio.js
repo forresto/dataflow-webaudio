@@ -13,6 +13,7 @@ $(function($) {
     /*jshint newcap:false*/
     context = new webkitAudioContext();
   } else {
+    window.alert("WebAudio isn't supported in this browser yet :-(");
     throw new Error('AudioContext not supported. :(');
   }
   dataflowWebAudio.context = context;
