@@ -1,4 +1,4 @@
-/*! dataflow.js - v0.0.1 - 2013-01-20 (12:48:13 AM GMT+0100)
+/*! dataflow.js - v0.0.1 - 2013-01-28 (2:31:23 PM GMT+0200)
 * https://github.com/meemoo/dataflow
 * Copyright (c) 2013 Forrest Oliphant; Licensed MIT, GPL */
 
@@ -316,7 +316,7 @@ jQuery(function($) {
       if (this["input"+name]){
         this["input"+name](value);
       }
-      this.trigger("change:state:"+name);
+      this.trigger("change:state:"+name); //TODO: design this
     },
     setBang: function(name){
       if (this["input"+name]){
@@ -383,7 +383,8 @@ jQuery(function($) {
     defaults: {
       id: "input",
       label: "",
-      type: "all"
+      type: "all",
+      description: ""
     },
     initialize: function() {
       this.parentNode = this.get("parentNode");
@@ -417,7 +418,8 @@ jQuery(function($) {
     defaults: {
       id: "output",
       label: "",
-      type: "all"
+      type: "all",
+      description: ""
     },
     initialize: function() {
       this.parentNode = this.get("parentNode");
@@ -450,6 +452,9 @@ jQuery(function($) {
   // Dependencies
 
   Edge.Model = Backbone.Model.extend({
+    defaults: {
+      "z": 0
+    },
     initialize: function() {
       var nodes;
       var preview = this.get("preview");
@@ -493,7 +498,11 @@ jQuery(function($) {
   });
 
   Edge.Collection = Backbone.Collection.extend({
-    model: Edge.Model
+    model: Edge.Model,
+    comparator: function(edge) {
+      // Sort edges by z order
+      return edge.get("z");
+    }
   });
 
 }(Dataflow.module("edge")) );
@@ -865,7 +874,7 @@ jQuery(function($) {
     '<span class="plug in" title="drag to edit wire"></span>'+ //i18n
     '<span class="hole in" title="drag to make new wire"></span>'+ //i18n
     '<span class="input-container in"></span>'+
-    '<span class="label in"><%= label %></span>';
+    '<span class="label in" title="<%= description %>"><%= label %></span>';
  
   Input.View = Backbone.View.extend({
     template: _.template(template),
@@ -880,6 +889,7 @@ jQuery(function($) {
       "drag      .plug":  "changeEdgeDrag",
       "dragstop  .plug":  "changeEdgeStop",
       "drop":             "connectEdge",
+      "change .input-select":  "inputSelect",
       "change .input-int":     "inputInt",
       "change .input-float":   "inputFloat",
       "change .input-string":  "inputString",
@@ -894,7 +904,10 @@ jQuery(function($) {
         helper: function(){
           return $('<span class="plug in helper" />');
         },
-        disabled: true
+        disabled: true,
+        // To prevent accidental disconnects
+        distance: 10,
+        delay: 100
       });
       this.$(".hole").draggable({
         helper: function(){
@@ -911,7 +924,42 @@ jQuery(function($) {
       var input;
       var type = this.model.get("type");
       var state = this.model.parentNode.get("state");
-      if (type === "int" || type === "float") {
+      var options = this.model.get("options");
+      if (options !== undefined) {
+        // Select dropdown
+        // Find default
+        var val;
+        if (state && state[this.model.id] !== undefined){
+          // Use the stored state
+          val = state[this.model.id];
+        } else if (this.model.get("value") !== undefined) {
+          // Use the default
+          val = this.model.get("value");
+        }
+        // Convert options
+        if (typeof options === "string") {
+          options = options.split(" ");
+        }
+        if ($.isArray(options)){
+          // Convert array to object
+          var o = {};
+          for (var i=0; i<options.length; i++){
+            o[options[i]] = options[i];
+          }
+          options = o;
+        }
+        // Make select
+        input = $('<select class="input input-select">');
+        for (var name in options) {
+          var option = $('<option value="'+options[name]+'">'+name+'</option>')
+            .data("val", options[name]);
+          if (val && options[name] === val) {
+            option.prop("selected", true);
+          }
+          input.append(option);
+        }
+      } else if (type === "int" || type === "float") {
+        // Number input
         var attributes = {};
         if (this.model.get("min") !== undefined) {
           attributes.min = this.model.get("min");
@@ -925,7 +973,7 @@ jQuery(function($) {
         input = $('<input type="number" class="input input-number">')
           .attr(attributes)
           .addClass(type === "int" ? "input-int" : "input-float");
-        if (state[this.model.id] !== undefined){
+        if (state && state[this.model.id] !== undefined){
           // Use the stored state
           input.val(state[this.model.id]);
         } else if (this.model.get("value") !== undefined) {
@@ -933,8 +981,9 @@ jQuery(function($) {
           input.val(this.model.get("value"));
         }
       } else if (type === "string") {
+        // String input
         input = $('<input class="input input-string">');
-        if (state[this.model.id] !== undefined){
+        if (state && state[this.model.id] !== undefined){
           // Use the stored state
           input.val(state[this.model.id]);
         } else if (this.model.get("value") !== undefined) {
@@ -942,8 +991,9 @@ jQuery(function($) {
           input.val(this.model.get("value"));
         }
       } else if (type === "boolean") {
+        // Checkbox boolean
         input = $('<input type="checkbox" class="input input-boolean">');
-        if (state[this.model.id] !== undefined){
+        if (state && state[this.model.id] !== undefined){
           // Use the stored state
           input.prop("checked", state[this.model.id]);
         } else if (this.model.get("value") !== undefined) {
@@ -951,11 +1001,16 @@ jQuery(function($) {
           input.prop("checked", this.model.get("value"));
         }
       } else if (type === "bang") {
+        // Button bang
         input = $('<button class="input input-bang">!</button>');
       } 
       if (input) {
         this.$(".input-container").append(input);
       }
+    },
+    inputSelect: function(e){
+      var val = $(e.target).find(":selected").data("val");
+      this.model.parentNode.setState(this.model.id, val);
     },
     inputInt: function(e){
       this.model.parentNode.setState(this.model.id, parseInt($(e.target).val(), 10));
@@ -1016,12 +1071,18 @@ jQuery(function($) {
       event.stopPropagation();
 
       if (this.isConnected){
-        var changeEdge = this.model.parentNode.parentGraph.edges.find(function(edge){
-          return edge.target === this.model;
+        var changeEdge;
+        // Will get the last (top) matching edge
+        this.model.parentNode.parentGraph.edges.each(function(edge){
+          if(edge.target === this.model){
+            changeEdge = edge;
+          }
         }, this);
         if (changeEdge){
-          this.changeEdge = changeEdge;
-          this.changeEdge.view.fade();
+          // Remove edge
+          changeEdge.collection.remove(changeEdge);
+
+          // Make preview
           ui.helper.data({
             port: changeEdge.source
           });
@@ -1054,15 +1115,6 @@ jQuery(function($) {
       // Clean up preview edge
       if (this.previewEdgeChange) {
         this.previewEdgeChangeView.remove();
-        if (this.changeEdge) {
-          this.changeEdge.view.unfade();
-          if (ui.helper.data("removeChangeEdge")){
-            this.changeEdge.collection.remove(this.changeEdge);
-          } else {
-            //TODO delete edge confirm
-          }
-          this.changeEdge = null;
-        }
         delete this.previewEdgeChange;
         delete this.previewEdgeChangeView;
       }
@@ -1119,7 +1171,7 @@ jQuery(function($) {
   var Edge = Dataflow.module("edge");
  
   var template = 
-    '<span class="label out"><%= label %></span>'+
+    '<span class="label out" title="<%= description %>"><%= label %></span>'+
     '<span class="hole out" title="drag to make new wire"></span>'+
     '<span class="plug out" title="drag to edit wire"></span>';
 
@@ -1144,7 +1196,10 @@ jQuery(function($) {
         helper: function(){
           return $('<span class="plug out helper" />');
         },
-        disabled: true
+        disabled: true,
+        // To prevent accidental disconnects
+        distance: 10,
+        delay: 100
       });
       this.$(".hole").draggable({
         helper: function(){
@@ -1199,12 +1254,21 @@ jQuery(function($) {
       event.stopPropagation();
 
       if (this.isConnected){
-        var changeEdge = this.model.parentNode.parentGraph.edges.find(function(edge){
-          return edge.source === this.model;
+        // var changeEdge = this.model.parentNode.parentGraph.edges.find(function(edge){
+        //   return edge.source === this.model;
+        // }, this);
+        var changeEdge;
+        // Will get the last (top) matching edge
+        this.model.parentNode.parentGraph.edges.each(function(edge){
+          if(edge.source === this.model){
+            changeEdge = edge;
+          }
         }, this);
         if (changeEdge){
-          this.changeEdge = changeEdge;
-          this.changeEdge.view.fade();
+          // Remove edge
+          changeEdge.collection.remove(changeEdge);
+
+          // Make preview
           ui.helper.data({
             port: changeEdge.target
           });
@@ -1237,15 +1301,6 @@ jQuery(function($) {
       // Clean up preview edge
       if (this.previewEdgeChange) {
         this.previewEdgeChangeView.remove();
-        if (this.changeEdge) {
-          this.changeEdge.view.unfade();
-          if (ui.helper.data("removeChangeEdge")){
-            this.changeEdge.collection.remove(this.changeEdge);
-          } else {
-            //TODO delete edge confirm
-          }
-          this.changeEdge = null;
-        }
         delete this.previewEdgeChange;
         delete this.previewEdgeChangeView;
       }
@@ -1396,6 +1451,21 @@ jQuery(function($) {
       this.el.setAttribute("class", "edge");
     },
     highlight: function(){
+      var topZ = 0;
+      var thisModel = this.model;
+      this.model.parentGraph.edges.each(function(edge){
+        if (edge !== thisModel) {
+          var thisZ = edge.get("z");
+          if (thisZ > topZ) {
+            topZ = thisZ;
+          }
+          if (edge.view){
+            edge.view.unhighlight();
+          }
+        }
+      });
+      this.model.set("z", topZ+1);
+      this.model.collection.sort();
       this.el.setAttribute("class", "edge highlight");
     },
     unhighlight: function(){
@@ -1429,29 +1499,29 @@ jQuery(function($) {
     },
     showEdit: function(event){
       // Hide others
-      $(".modal-bg").remove();
+      // $(".modal-bg").remove();
 
       // Highlight
       this.highlight();
       this.bringToTop();
 
       // Show box 
-      var self = this;
-      var modalBox = $('<div class="modal-bg" style="width:'+$(document).width()+'px; height:'+$(document).height()+'px;" />')
-        .click(function(){
-          $(".modal-bg").remove();
-          self.unhighlight();
-        });
-      var editBox = $('<div class="edge-edit-box" style="left:'+event.pageX+'px; top:'+event.pageY+'px;" />');
-      editBox.append(this.model.id+"<br />");
-      var deleteButton = $('<button>delete</button>')
-        .click(function(){
-          self.removeModel();
-          $(".modal-bg").remove();
-        });
-      editBox.append(deleteButton);
-      modalBox.append(editBox);
-      this.model.parentGraph.view.$el.append(modalBox);
+      // var self = this;
+      // var modalBox = $('<div class="modal-bg" style="width:'+$(document).width()+'px; height:'+$(document).height()+'px;" />')
+      //   .click(function(){
+      //     $(".modal-bg").remove();
+      //     self.unhighlight();
+      //   });
+      // var editBox = $('<div class="edge-edit-box" style="left:'+event.pageX+'px; top:'+event.pageY+'px;" />');
+      // editBox.append(this.model.id+"<br />");
+      // var deleteButton = $('<button>delete</button>')
+      //   .click(function(){
+      //     self.removeModel();
+      //     $(".modal-bg").remove();
+      //   });
+      // editBox.append(deleteButton);
+      // modalBox.append(editBox);
+      // this.model.parentGraph.view.$el.append(modalBox);
     },
     bringToTop: function(){
       var parent = this.el.parentNode;
@@ -1474,11 +1544,14 @@ jQuery(function($) {
   var Base = Dataflow.node("base");
 
   Base.Model = Node.Model.extend({
-    defaults: {
-      label: "",
-      type: "base",
-      x: 200,
-      y: 100
+    defaults: function(){
+      return {
+        label: "",
+        type: "base",
+        x: 200,
+        y: 100,
+        state: {}
+      };
     },
     initialize: function() {
       Node.Model.prototype.initialize.call(this);
@@ -1502,13 +1575,12 @@ jQuery(function($) {
   var BaseResizable = Dataflow.node("base-resizable");
 
   BaseResizable.Model = Base.Model.extend({
-    defaults: {
-      label: "",
-      type: "base-resizable",
-      x: 200,
-      y: 100,
-      w: 200,
-      h: 200
+    defaults: function(){
+      var defaults = Base.Model.prototype.defaults.call(this);
+      defaults.type = "base-resizable";
+      defaults.w = 200;
+      defaults.h = 200;
+      return defaults;
     },
     initialize: function() {
       Base.Model.prototype.initialize.call(this);
@@ -1568,13 +1640,12 @@ jQuery(function($) {
   var Test = Dataflow.node("test");
 
   Test.Model = BaseResizable.Model.extend({
-    defaults: {
-      label: "",
-      type: "test",
-      x: 200,
-      y: 100,
-      w: 200,
-      h: 200
+    defaults: function(){
+      var defaults = BaseResizable.Model.prototype.defaults.call(this);
+      defaults.type = "test";
+      defaults.w = 200;
+      defaults.h = 400;
+      return defaults;
     },
     inputs:[
       {
@@ -1582,8 +1653,37 @@ jQuery(function($) {
         type: "all"
       },
       {
-        id: "input2",
-        type: "all"
+        id: "string",
+        type: "string"
+      },
+      {
+        id: "int",
+        type: "int"
+      },
+      {
+        id: "float",
+        type: "float"
+      },
+      {
+        id: "boolean",
+        type: "boolean"
+      },
+      {
+        id: "bang",
+        type: "bang"
+      },
+      {
+        id: "select",
+        type: "string",
+        options: "January February March April",
+        value: "April"
+      },
+      {
+        id: "select2",
+        type: "int",
+        min: 0,
+        max: 3,
+        options: {sine:0, square:1, saw: 2, triangle: 3}
       }
     ],
     outputs:[

@@ -129,7 +129,7 @@ input[type="submit"],
   }
   .node h1 {
     cursor: move;
-    font-size: 18px;
+    font-size: 20px;
     font-weight: normal;
     margin: 0;
     padding: 0;
@@ -194,9 +194,19 @@ input[type="submit"],
   z-index: 9999;
 }
 
-.input-number,
-.input-string {
+.input-string, 
+.input-int, 
+.input-float, 
+.input-select {
+  margin-left: 2px;
   width: 4em;
+  vertical-align: top;
+}
+.input-select {
+  width: 5em;
+}
+.input-bang {
+  vertical-align: top;
 }
 
 

@@ -49,9 +49,9 @@ $(function($) {
       Base.View.prototype.initialize.call(this);
 
       //HACK
-      _.delay(function(){
-        this.$(".input-number").scrubber();
-      }, 10);
+      // _.delay(function(){
+      //   this.$(".input-number").scrubber();
+      // }, 10);
     }
   });
 
@@ -113,6 +113,9 @@ $(function($) {
       if (this._stream) {
         this._stream.stop();
       }
+    },
+    unload: function(){
+      this.inputstop();
     },
     inputs:[
       {
@@ -197,8 +200,8 @@ $(function($) {
         description: "0:sine, 1:square, 2:sawtooth, 3:triangle",
         value: 0,
         min: 0,
-        max: 3
-        // options: ["sine", "square", "sawtooth", "triangle"]
+        max: 3,
+        options: {"∿ sine":0, "⊓ square":1, "◿ saw": 2, "△ triangle": 3}
       },
       {
         id: "frequency",
@@ -419,16 +422,29 @@ $(function($) {
 
   Dataflow.on("edge:add", function(graph, edge){
     // Connect
-    if (edge.source.get("type") === "audio" && edge.target.get("type") === "audio") {
-      if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioInput) {
-        edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioInput);
-      }
-    } else if (edge.source.get("type") === "audio" && edge.target.get("automatable") === true) {
-      // Connect audio to automatable AudioParam
-      if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioOutput) {
-        edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioOutput[edge.target.id]);
+    if (edge.source.get("type") === "audio") {
+      var sourceOut = edge.source.parentNode.audioOutput;
+      var targetIn = edge.target.parentNode.audioInput;
+      var targetOut = edge.target.parentNode.audioOutput;
+      if (edge.target.get("type") === "audio" && sourceOut && targetIn) {
+        sourceOut.connect(targetIn);
+      } else if (edge.target.get("automatable") === true && sourceOut && targetOut) {
+        // Connect audio to automatable AudioParam
+        sourceOut.connect(targetOut[edge.target.id]);
+      } else {
+        Dataflow.log("do those connect?");
       }
     }
+    // if (edge.source.get("type") === "audio" && edge.target.get("type") === "audio") {
+    //   if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioInput) {
+    //     edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioInput);
+    //   }
+    // } else if (edge.source.get("type") === "audio" && edge.target.get("automatable") === true) {
+    //   // Connect audio to automatable AudioParam
+    //   if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioOutput) {
+    //     edge.source.parentNode.audioOutput.connect(edge.target.parentNode.audioOutput[edge.target.id]);
+    //   }
+    // }
   });
 
   Dataflow.on("edge:remove", function(graph, edge){
@@ -438,7 +454,7 @@ $(function($) {
         edge.source.parentNode.audioOutput.disconnect(edge.target.parentNode.audioInput);
       }
     } else if (edge.source.get("type") === "audio" && edge.target.get("automatable") === true) {
-      // Connect audio to automatable AudioParam
+      // Disconnect audio from automatable AudioParam
       if (edge.source.parentNode.audioOutput && edge.target.parentNode.audioOutput) {
         edge.source.parentNode.audioOutput.disconnect(edge.target.parentNode.audioOutput[edge.target.id]);
       }
