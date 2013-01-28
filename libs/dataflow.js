@@ -1,4 +1,4 @@
-/*! dataflow.js - v0.0.1 - 2013-01-28 (2:31:23 PM GMT+0200)
+/*! dataflow.js - v0.0.1 - 2013-01-28 (6:12:13 PM GMT+0200)
 * https://github.com/meemoo/dataflow
 * Copyright (c) 2013 Forrest Oliphant; Licensed MIT, GPL */
 
@@ -300,12 +300,12 @@ jQuery(function($) {
 
       // Convert outputs array to backbone collection
       var outputArray = this.outputs;
-      this.outputs = new Input.Collection();
+      this.outputs = new Output.Collection();
       this.outputs.parentNode = this;
       for(i=0; i<outputArray.length; i++) {
         var output = outputArray[i];
         output.parentNode = this;
-        output = new Input.Model(output);
+        output = new Output.Model(output);
         this.outputs.add(output);
       }
 
@@ -323,6 +323,13 @@ jQuery(function($) {
         this["input"+name]();
       }
     },
+    send: function(name, value){
+      // Send value to connected nodes
+      var output = this.outputs.get(name);
+      if (output) {
+        output.send(value);
+      }
+    },
     remove: function(){
       // Node removed from graph's nodes collection
       // Remove related edges
@@ -333,9 +340,10 @@ jQuery(function($) {
       for (var i=0; i<relatedEdges.length; i++) {
         // Remove connected edges
         var edge = relatedEdges[i];
-        edge.collection.remove(edge);
+        edge.remove();
       }
       this.unload();
+      this.collection.remove(this);
     },
     unload: function(){
       // Stop any processes that need to be stopped
@@ -400,7 +408,7 @@ jQuery(function($) {
         return edge.isConnectedToPort(this);
       }, this);
       _.each(relatedEdges, function(edge){
-        edge.collection.remove(edge);
+        edge.remove();
       }, this);
     }
 
@@ -426,6 +434,36 @@ jQuery(function($) {
       if (this.get("label")===""){
         this.set({label: this.id});
       }
+      this.connected = [];
+    },
+    connect: function(edge){
+      if (_.indexOf(this.connected, edge) === -1) {
+        // Not sure why I have to check this
+        var unique = true;
+        for (var i=0; i<this.connected.length; i++){
+          if (this.connected[i].id === edge.id){
+            unique = false;
+          }
+        }
+        if (unique){
+          this.connected.push(edge);
+        }
+      }
+    },
+    disconnect: function(edge){
+      this.connected = _.without(this.connected, edge);
+    },
+    send: function(value){
+      for (var i=0; i<this.connected.length; i++){
+        var edge = this.connected[i];
+        var targetNode = edge.target.parentNode;
+        var name = edge.target.id;
+        if (targetNode["input"+name]){
+          targetNode["input"+name](value);
+        } else {
+          targetNode["input_"+name] = value;
+        }
+      }
     },
     remove: function(){
       // Port removed from node's outputs collection
@@ -435,7 +473,7 @@ jQuery(function($) {
         return edge.isConnectedToPort(this);
       }, this);
       _.each(relatedEdges, function(edge){
-        edge.collection.remove(edge);
+        edge.remove();
       }, this);
     }
 
@@ -478,6 +516,9 @@ jQuery(function($) {
         }catch(e){
           Dataflow.log("node or port not found for edge", this);
         }
+        if(this.source.connect){
+          this.source.connect(this);
+        }
       }
     },
     isConnectedToPort: function(port) {
@@ -494,13 +535,21 @@ jQuery(function($) {
         source: this.get("source"),
         target: this.get("target")
       };
+    },
+    remove: function(){
+      if(this.source.disconnect){
+        this.source.disconnect(this);
+      }
+      if (this.collection) {
+        this.collection.remove(this);
+      }
     }
   });
 
   Edge.Collection = Backbone.Collection.extend({
     model: Edge.Model,
     comparator: function(edge) {
-      // Sort edges by z order
+      // Sort edges by z order (z set by clicking; not saved to JSON)
       return edge.get("z");
     }
   });
@@ -835,7 +884,7 @@ jQuery(function($) {
       this.hideControls();
     },
     removeModel: function(){
-      this.model.collection.remove(this.model);
+      this.model.remove();
     },
     select: function(event){
       if (event) {
@@ -1080,7 +1129,7 @@ jQuery(function($) {
         }, this);
         if (changeEdge){
           // Remove edge
-          changeEdge.collection.remove(changeEdge);
+          changeEdge.remove();
 
           // Make preview
           ui.helper.data({
@@ -1266,7 +1315,7 @@ jQuery(function($) {
         }, this);
         if (changeEdge){
           // Remove edge
-          changeEdge.collection.remove(changeEdge);
+          changeEdge.remove();
 
           // Make preview
           ui.helper.data({
@@ -1417,7 +1466,7 @@ jQuery(function($) {
       // Click handler
       var self = this;
       this.el.addEventListener("click", function(event){
-        self.showEdit(event);
+        self.click(event);
       });
     },
     render: function(previewPosition){
@@ -1497,31 +1546,10 @@ jQuery(function($) {
       // Remove element
       this.el.parentNode.removeChild(this.el);
     },
-    showEdit: function(event){
-      // Hide others
-      // $(".modal-bg").remove();
-
+    click: function(event){
       // Highlight
       this.highlight();
       this.bringToTop();
-
-      // Show box 
-      // var self = this;
-      // var modalBox = $('<div class="modal-bg" style="width:'+$(document).width()+'px; height:'+$(document).height()+'px;" />')
-      //   .click(function(){
-      //     $(".modal-bg").remove();
-      //     self.unhighlight();
-      //   });
-      // var editBox = $('<div class="edge-edit-box" style="left:'+event.pageX+'px; top:'+event.pageY+'px;" />');
-      // editBox.append(this.model.id+"<br />");
-      // var deleteButton = $('<button>delete</button>')
-      //   .click(function(){
-      //     self.removeModel();
-      //     $(".modal-bg").remove();
-      //   });
-      // editBox.append(deleteButton);
-      // modalBox.append(editBox);
-      // this.model.parentGraph.view.$el.append(modalBox);
     },
     bringToTop: function(){
       var parent = this.el.parentNode;
@@ -1529,9 +1557,6 @@ jQuery(function($) {
         parent.removeChild(this.el);
         parent.appendChild(this.el);
       }
-    },
-    removeModel: function(){
-      this.model.collection.remove(this.model);
     }
   });
 
@@ -1646,6 +1671,18 @@ jQuery(function($) {
       defaults.w = 200;
       defaults.h = 400;
       return defaults;
+    },
+    inputinput: function(value){
+      this.view.$(".inner").text(value);
+    },
+    inputstring: function(value){
+      this.send("output", value);
+    },
+    inputint: function(value){
+      this.send("output", value);
+    },
+    inputfloat: function(value){
+      this.send("output", value);
     },
     inputs:[
       {
@@ -1973,7 +2010,7 @@ jQuery(function($) {
       return node.view.$el.hasClass("ui-selected");
     });
     _.each(toRemove, function(node){
-      node.collection.remove(node);
+      node.remove();
     });
   }
   buttons.children(".cut").click(cut);

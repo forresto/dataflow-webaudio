@@ -201,20 +201,20 @@ $(function($) {
         value: 0,
         min: 0,
         max: 3,
-        options: {"∿ sine":0, "⊓ square":1, "◿ saw": 2, "△ triangle": 3}
+        options: {"∿ sine": 0, "⊓ square": 1, "◿ saw": 2, "△ triangle": 3}
       },
       {
         id: "frequency",
+        type: "float",
         description: "frequency in hz",
         value: 440,
-        type: "float",
         automatable: true
       },
       {
         id: "detune",
+        type: "float",
         description: "detune in cents",
         value: 0,
-        type: "float",
         automatable: true
       },
       {
