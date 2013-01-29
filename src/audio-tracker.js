@@ -24,18 +24,60 @@
         type: "object"
       },
       {
-        id: "start",
+        id: "bpm",
+        min: 0,
+        value: 120,
+        type: "float"
+      },
+      {
+        id: "play",
         type: "bang"
       },
       {
-        id: "stop",
+        id: "pause",
         type: "bang"
       }
     ],
     outputs:[
       {
-        id: "out",
-        type: "audio"
+        id: "track0",
+        description: "control signal for track 0",
+        type: "control"
+      },
+      {
+        id: "track1",
+        description: "control signal for track 1",
+        type: "control"
+      },
+      {
+        id: "track2",
+        description: "control signal for track 2",
+        type: "control"
+      },
+      {
+        id: "track3",
+        description: "control signal for track 3",
+        type: "control"
+      },
+      {
+        id: "track4",
+        description: "control signal for track 4",
+        type: "control"
+      },
+      {
+        id: "track5",
+        description: "control signal for track 5",
+        type: "control"
+      },
+      {
+        id: "track6",
+        description: "control signal for track 6",
+        type: "control"
+      },
+      {
+        id: "track7",
+        description: "control signal for track 7",
+        type: "control"
       }
     ]
   });
