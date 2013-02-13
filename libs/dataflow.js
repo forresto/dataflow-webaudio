@@ -1,4 +1,4 @@
-/*! dataflow.js - v0.0.1 - 2013-01-28 (6:12:13 PM GMT+0200)
+/*! dataflow.js - v0.0.1 - 2013-02-13 (1:26:15 PM GMT+0200)
 * https://github.com/meemoo/dataflow
 * Copyright (c) 2013 Forrest Oliphant; Licensed MIT, GPL */
 
@@ -324,6 +324,8 @@ jQuery(function($) {
       }
     },
     send: function(name, value){
+      // This isn't the only way that values are sent, see dataflow-webaudio
+      // Values sent here will not be `set()` on the recieving node
       // Send value to connected nodes
       var output = this.outputs.get(name);
       if (output) {
@@ -333,15 +335,27 @@ jQuery(function($) {
     remove: function(){
       // Node removed from graph's nodes collection
       // Remove related edges
-      var relatedEdges = this.parentGraph.edges.filter(function(edge){
-        // Find connected edges
-        return edge.isConnectedToNode(this);
-      }, this);
-      for (var i=0; i<relatedEdges.length; i++) {
-        // Remove connected edges
-        var edge = relatedEdges[i];
-        edge.remove();
-      }
+      // while(this.inputs.length>0) {
+      //   this.inputs.at(0).remove();
+      // }
+      // while(this.outputs.length>0) {
+      //   this.outputs.at(0).remove();
+      // }
+      this.inputs.each(function(input){
+        input.remove();
+      });
+      this.outputs.each(function(output){
+        output.remove();
+      });
+      // var relatedEdges = this.parentGraph.edges.filter(function(edge){
+      //   // Find connected edges
+      //   return edge.isConnectedToNode(this);
+      // }, this);
+      // for (var i=0; i<relatedEdges.length; i++) {
+      //   // Remove connected edges
+      //   var edge = relatedEdges[i];
+      //   edge.remove();
+      // }
       this.unload();
       this.collection.remove(this);
     },
@@ -399,17 +413,28 @@ jQuery(function($) {
       if (this.get("label")===""){
         this.set({label: this.id});
       }
+      this.connected = [];
+    },
+    connect: function(edge){
+      var unique = true;
+      for (var i=0; i<this.connected.length; i++){
+        if (this.connected[i].id === edge.id){
+          unique = false;
+        }
+      }
+      if (unique){
+        this.connected.push(edge);
+      }
+    },
+    disconnect: function(edge){
+      this.connected = _.without(this.connected, edge);
     },
     remove: function(){
       // Port removed from node's inputs collection
       // Remove related edges
-      var relatedEdges = this.parentNode.parentGraph.edges.filter(function(edge){
-        // Find connected edges
-        return edge.isConnectedToPort(this);
-      }, this);
-      _.each(relatedEdges, function(edge){
-        edge.remove();
-      }, this);
+      while (this.connected.length > 0) {
+        this.connected[0].remove();
+      }
     }
 
   });
@@ -420,38 +445,18 @@ jQuery(function($) {
 
 }(Dataflow.module("input")) );
 
-( function(Output) {
+( function(Dataflow) {
+
+  var Input = Dataflow.module("input");
+  var Output = Dataflow.module("output");
  
-  Output.Model = Backbone.Model.extend({
+  // Output extends input
+  Output.Model = Input.Model.extend({
     defaults: {
       id: "output",
       label: "",
       type: "all",
       description: ""
-    },
-    initialize: function() {
-      this.parentNode = this.get("parentNode");
-      if (this.get("label")===""){
-        this.set({label: this.id});
-      }
-      this.connected = [];
-    },
-    connect: function(edge){
-      if (_.indexOf(this.connected, edge) === -1) {
-        // Not sure why I have to check this
-        var unique = true;
-        for (var i=0; i<this.connected.length; i++){
-          if (this.connected[i].id === edge.id){
-            unique = false;
-          }
-        }
-        if (unique){
-          this.connected.push(edge);
-        }
-      }
-    },
-    disconnect: function(edge){
-      this.connected = _.without(this.connected, edge);
     },
     send: function(value){
       for (var i=0; i<this.connected.length; i++){
@@ -459,31 +464,21 @@ jQuery(function($) {
         var targetNode = edge.target.parentNode;
         var name = edge.target.id;
         if (targetNode["input"+name]){
+          // function defined, call it with value
           targetNode["input"+name](value);
         } else {
-          targetNode["input_"+name] = value;
+          // no function defined, set variable
+          targetNode["_"+name] = value;
         }
       }
-    },
-    remove: function(){
-      // Port removed from node's outputs collection
-      // Remove related edges
-      var relatedEdges = this.parentNode.parentGraph.edges.filter(function(edge){
-        // Find connected edges
-        return edge.isConnectedToPort(this);
-      }, this);
-      _.each(relatedEdges, function(edge){
-        edge.remove();
-      }, this);
     }
-
   });
 
   Output.Collection = Backbone.Collection.extend({
     model: Output.Model
   });
 
-}(Dataflow.module("output")) );
+}(Dataflow) );
 
 ( function(Edge) {
  
@@ -516,9 +511,11 @@ jQuery(function($) {
         }catch(e){
           Dataflow.log("node or port not found for edge", this);
         }
-        if(this.source.connect){
-          this.source.connect(this);
-        }
+
+        this.source.connect(this);
+        this.target.connect(this);
+
+        this.bringToTop();
       }
     },
     isConnectedToPort: function(port) {
@@ -536,10 +533,27 @@ jQuery(function($) {
         target: this.get("target")
       };
     },
-    remove: function(){
-      if(this.source.disconnect){
-        this.source.disconnect(this);
+    bringToTop: function(){
+      var topZ = 0;
+      this.parentGraph.edges.each(function(edge){
+        if (edge !== this) {
+          var thisZ = edge.get("z");
+          if (thisZ > topZ) {
+            topZ = thisZ;
+          }
+          if (edge.view){
+            edge.view.unhighlight();
+          }
+        }
+      }, this);
+      this.set("z", topZ+1);
+      if (this.collection) {
+        this.collection.sort();
       }
+    },
+    remove: function(){
+      this.source.disconnect(this);
+      this.target.disconnect(this);
       if (this.collection) {
         this.collection.remove(this);
       }
@@ -930,14 +944,15 @@ jQuery(function($) {
     tagName: "li",
     className: "port in",
     events: {
+      "click":            "getTopEdge",
+      "drop":             "connectEdge",
       "dragstart .hole":  "newEdgeStart",
       "drag      .hole":  "newEdgeDrag",
       "dragstop  .hole":  "newEdgeStop",
-      "click     .plug":  "highlightEdge",
       "dragstart .plug":  "changeEdgeStart",
       "drag      .plug":  "changeEdgeDrag",
       "dragstop  .plug":  "changeEdgeStop",
-      "drop":             "connectEdge",
+
       "change .input-select":  "inputSelect",
       "change .input-int":     "inputInt",
       "change .input-float":   "inputFloat",
@@ -1111,22 +1126,30 @@ jQuery(function($) {
       delete this.previewEdgeNew;
       delete this.previewEdgeNewView;
     },
-    highlightEdge: function() {
+    getTopEdge: function() {
+      var topEdge;
       if (this.isConnected){
+        // Will get the last (top) matching edge
+        this.model.parentNode.parentGraph.edges.each(function(edge){
+          if(edge.target === this.model){
+            topEdge = edge;
+          }
+          if (edge.view) {
+            edge.view.unhighlight();
+          }
+        }, this);
+        if (topEdge && topEdge.view) {
+          topEdge.view.click();
+        }
       }
+      return topEdge;
     },
     changeEdgeStart: function(event, ui){
       // Don't drag node
       event.stopPropagation();
 
       if (this.isConnected){
-        var changeEdge;
-        // Will get the last (top) matching edge
-        this.model.parentNode.parentGraph.edges.each(function(edge){
-          if(edge.target === this.model){
-            changeEdge = edge;
-          }
-        }, this);
+        var changeEdge = this.getTopEdge();
         if (changeEdge){
           // Remove edge
           changeEdge.remove();
@@ -1229,13 +1252,14 @@ jQuery(function($) {
     tagName: "li",
     className: "port out",
     events: {
+      "click":            "getTopEdge",
+      "drop":             "connectEdge",
       "dragstart .hole":  "newEdgeStart",
       "drag .hole":       "newEdgeDrag",
       "dragstop .hole":   "newEdgeStop",
       "dragstart .plug":  "changeEdgeStart",
       "drag .plug":       "changeEdgeDrag",
-      "dragstop .plug":   "changeEdgeStop",
-      "drop":             "connectEdge"
+      "dragstop .plug":   "changeEdgeStop"
     },
     initialize: function () {
       this.$el.html(this.template(this.model.toJSON()));
@@ -1298,21 +1322,30 @@ jQuery(function($) {
       delete this.previewEdge;
       delete this.previewEdgeView;
     },
+    getTopEdge: function() {
+      var topEdge;
+      if (this.isConnected){
+        // Will get the last (top) matching edge
+        this.model.parentNode.parentGraph.edges.each(function(edge){
+          if(edge.source === this.model){
+            topEdge = edge;
+          }
+          if (edge.view) {
+            edge.view.unhighlight();
+          }
+        }, this);
+        if (topEdge && topEdge.view) {
+          topEdge.view.click();
+        }
+      }
+      return topEdge;
+    },
     changeEdgeStart: function(event, ui){
       // Don't drag node
       event.stopPropagation();
 
       if (this.isConnected){
-        // var changeEdge = this.model.parentNode.parentGraph.edges.find(function(edge){
-        //   return edge.source === this.model;
-        // }, this);
-        var changeEdge;
-        // Will get the last (top) matching edge
-        this.model.parentNode.parentGraph.edges.each(function(edge){
-          if(edge.source === this.model){
-            changeEdge = edge;
-          }
-        }, this);
+        var changeEdge = this.getTopEdge();
         if (changeEdge){
           // Remove edge
           changeEdge.remove();
@@ -1500,21 +1533,6 @@ jQuery(function($) {
       this.el.setAttribute("class", "edge");
     },
     highlight: function(){
-      var topZ = 0;
-      var thisModel = this.model;
-      this.model.parentGraph.edges.each(function(edge){
-        if (edge !== thisModel) {
-          var thisZ = edge.get("z");
-          if (thisZ > topZ) {
-            topZ = thisZ;
-          }
-          if (edge.view){
-            edge.view.unhighlight();
-          }
-        }
-      });
-      this.model.set("z", topZ+1);
-      this.model.collection.sort();
       this.el.setAttribute("class", "edge highlight");
     },
     unhighlight: function(){
@@ -1552,6 +1570,7 @@ jQuery(function($) {
       this.bringToTop();
     },
     bringToTop: function(){
+      this.model.bringToTop();
       var parent = this.el.parentNode;
       if(parent){
         parent.removeChild(this.el);
