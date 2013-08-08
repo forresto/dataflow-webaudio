@@ -46,8 +46,8 @@
     };
 
     var viewExtender = {
-      initialize: function(){
-        AudioBase.View.prototype.initialize.call(this);
+      initialize: function(options){
+        AudioBase.View.prototype.initialize.call(this, options);
         // this.$(".inner").text("...");
 
         // $(this.inputs.el).children(".int, .float").each(function(num, el){
