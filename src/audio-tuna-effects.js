@@ -3,10 +3,10 @@
   var Base = Dataflow.node("base");
   var AudioBase = Dataflow.node("audio-base");
 
-  var setupTunaModules = function(){
+  var setupTunaModules = function(dataflow){
 
     // Make Tuna effect modules
-    var tuna = new Tuna(Dataflow.audioContext);
+    var tuna = new Tuna(dataflow.audioContext);
 
     var tunaModules = {
       Overdrive: {},
@@ -119,4 +119,4 @@
   Dataflow.on("audioContextReady", setupTunaModules);
 
 
-}(Dataflow) );
+}(Dataflow.prototype) );

@@ -1,0 +1,51 @@
+{
+  "name": "dataflow",
+  "title": "dataflow.js",
+  "description": "jQueryUI-based data flow graph editor",
+  "version": "0.0.1",
+  "homepage": "https://github.com/meemoo/dataflow",
+  "demo": "http://meemoo.org/dataflow/",
+  "author": {
+    "name": "Forrest Oliphant",
+    "email": "forrest@sembiki.com",
+    "url": "http://meemoo.org/"
+  },
+  "repo": "meemoo/dataflow",
+  "main": "build/dataflow.build.js",
+  "scripts": [
+    "build/dataflow.build.js"
+  ],
+  "styles": [],
+  "files": [
+    "build/default/dataflow.min.css",
+    "libs/jquery.js",
+    "libs/jquery-ui.js",
+    "libs/jquery.ui.touch-punch.js",
+    "libs/underscore.js",
+    "libs/backbone.js",
+    "libs/hammer.min.js"
+  ],
+  "fonts": [
+    "fonts/fontawesome-webfont.eot",
+    "fonts/fontawesome-webfont.svg",
+    "fonts/fontawesome-webfont.ttf",
+    "fonts/fontawesome-webfont.woff",
+    "fonts/FontAwesome.otf",
+    "fonts/proximanova-bold-webfont.eot",
+    "fonts/proximanova-bold-webfont.svg",
+    "fonts/proximanova-bold-webfont.ttf",
+    "fonts/proximanova-bold-webfont.woff",
+    "fonts/proximanova-light-webfont.eot",
+    "fonts/proximanova-light-webfont.svg",
+    "fonts/proximanova-light-webfont.ttf",
+    "fonts/proximanova-light-webfont.woff",
+    "fonts/proximanova-regular-webfont.eot",
+    "fonts/proximanova-regular-webfont.svg",
+    "fonts/proximanova-regular-webfont.ttf",
+    "fonts/proximanova-regular-webfont.woff",
+    "fonts/proximanova-semibold-webfont.eot",
+    "fonts/proximanova-semibold-webfont.svg",
+    "fonts/proximanova-semibold-webfont.ttf",
+    "fonts/proximanova-semibold-webfont.woff"
+  ]
+}

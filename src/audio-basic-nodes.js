@@ -27,13 +27,8 @@
     }
   });
   AudioBase.View = Base.View.extend({
-    initialize: function(){
-      Base.View.prototype.initialize.call(this);
-
-      //HACK
-      // _.delay(function(){
-      //   this.$(".input-number").scrubber();
-      // }, 10);
+    initialize: function(options){
+      Base.View.prototype.initialize.call(this, options);
     }
   });
 
@@ -87,7 +82,7 @@
       var self = this;
       navigator.webkitGetUserMedia({audio: true}, function(stream) {
         self._stream = stream;
-        var microphone = self.audioOutput = Dataflow.audioContext.createMediaStreamSource(stream);
+        var microphone = self.audioOutput = dataflow.audioContext.createMediaStreamSource(stream);
         self.reconnect();
       }, function(error){});
     },
@@ -151,7 +146,7 @@
       if (this.audioOutput) {
         this.inputstop();
       }
-      var oscNode = this.audioOutput = Dataflow.audioContext.createOscillator();
+      var oscNode = this.audioOutput = dataflow.audioContext.createOscillator();
       var state = this.get("state");
       oscNode.frequency.value = state.frequency !== undefined ? state.frequency : 440;
       oscNode.detune.value = state.detune !== undefined ? state.detune : 0;
@@ -215,12 +210,7 @@
       }
     ]
   });
-  Oscillator.View = AudioBase.View.extend({
-    // initialize: function(){
-    //   AudioBase.View.prototype.initialize.call(this);
-    //   this.$(".inner").text("start / stop");
-    // }
-  });
+  Oscillator.View = AudioBase.View.extend({});
 
   var Gain = Dataflow.node("audio-gain");
   Gain.Model = AudioBase.Model.extend({
@@ -234,7 +224,7 @@
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
 
-      var gainNode = this.audioInput = this.audioOutput = Dataflow.audioContext.createGainNode();
+      var gainNode = this.audioInput = this.audioOutput = dataflow.audioContext.createGainNode();
       var state = this.get("state");
       gainNode.gain.value = state.gain !== undefined ? state.gain : 1.0;
     },
@@ -274,7 +264,7 @@
     },
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
-      this.audioInput = Dataflow.audioContext.destination;
+      this.audioInput = dataflow.audioContext.destination;
     },
     inputs:[
       {
@@ -287,4 +277,4 @@
   Destination.View = AudioBase.View.extend({});
 
 
-}(Dataflow) );
+}(Dataflow.prototype) );

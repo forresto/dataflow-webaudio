@@ -36,4 +36,4 @@
   });
   MToF.View = Base.View.extend({});
 
-}(Dataflow) );
+}(Dataflow.prototype) );

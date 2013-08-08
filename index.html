@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
   <title>Web Audio API + Dataflow graph editor</title>
-  <link rel="stylesheet" href="dataflow.css">
+  <link rel="stylesheet" href="components/meemoo-dataflow/build/default/dataflow.min.css">
 </head>
 
 <body>
@@ -13,16 +13,14 @@
     <a href="https://github.com/forresto/dataflow-webaudio">forresto/dataflow-webaudio</a>
   </div>
 
-  <!-- Third-Party Libraries -->
-  <script src="libs/jquery.js"></script>
-  <script src="libs/jquery-ui.js"></script>
-  <script src="libs/jquery-ui-scrubber.js"></script>
-  <script src="libs/underscore.js"></script>
-  <script src="libs/backbone.js"></script>
+  <!-- Libraries -->
+  <script src="components/meemoo-dataflow/libs/jquery.js"></script>
+  <script src="components/meemoo-dataflow/libs/jquery-ui.js"></script>
+  <script src="components/meemoo-dataflow/libs/jquery.ui.touch-punch.js"></script>
+  <script src="components/meemoo-dataflow/libs/underscore.js"></script>
+  <script src="components/meemoo-dataflow/libs/backbone.js"></script>
+  <script src="components/meemoo-dataflow/build/dataflow.build.js"></script>
   <script src="libs/tuna.js"></script>
-
-  <!-- Dataflow -->
-  <script src="libs/dataflow.js"></script> 
 
   <!-- Audio Modules -->
   <script src="src/audio-basic-nodes.js"></script> 

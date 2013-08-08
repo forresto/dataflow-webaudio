@@ -83,4 +83,4 @@
   });
   AudioTracker.View = AudioBase.View.extend({});
 
-}(Dataflow) );
+}(Dataflow.prototype) );

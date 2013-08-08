@@ -30,4 +30,4 @@
     $examples.append(li);
   }
 
-}(Dataflow) );
+}(Dataflow.prototype) );
