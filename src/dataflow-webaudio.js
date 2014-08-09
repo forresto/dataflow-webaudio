@@ -9,9 +9,6 @@ $(function($) {
   var context;
   if (typeof AudioContext !== "undefined") {
     context = new AudioContext();
-  } else if (typeof webkitAudioContext !== "undefined") {
-    /*jshint newcap:false*/
-    context = new webkitAudioContext();
   } else {
     window.alert("WebAudio isn't supported in this browser yet :-(");
     throw new Error('AudioContext not supported. :(');

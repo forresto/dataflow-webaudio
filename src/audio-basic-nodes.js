@@ -154,19 +154,11 @@
 
       this.reconnect();
 
-      if (oscNode.start !== undefined) {
-        oscNode.start(0);
-      } else {
-        oscNode.noteOn(0);
-      }
+      oscNode.start(0);
     },
     inputstop: function(){
       if (this.audioOutput) {
-        if (this.audioOutput.stop !== undefined) {
-          this.audioOutput.stop(0);
-        } else {
-          this.audioOutput.noteOff(0);
-        }
+        this.audioOutput.stop(0);
         this.audioOutput = null;
       }
     },
