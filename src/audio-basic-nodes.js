@@ -224,7 +224,7 @@
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
 
-      var gainNode = this.audioInput = this.audioOutput = dataflow.audioContext.createGainNode();
+      var gainNode = this.audioInput = this.audioOutput = dataflow.audioContext.createGain();
       var state = this.get("state");
       gainNode.gain.value = state.gain !== undefined ? state.gain : 1.0;
     },
