@@ -154,19 +154,11 @@
 
       this.reconnect();
 
-      if (oscNode.start !== undefined) {
-        oscNode.start(0);
-      } else {
-        oscNode.noteOn(0);
-      }
+      oscNode.start(0);
     },
     inputstop: function(){
       if (this.audioOutput) {
-        if (this.audioOutput.stop !== undefined) {
-          this.audioOutput.stop(0);
-        } else {
-          this.audioOutput.noteOff(0);
-        }
+        this.audioOutput.stop(0);
         this.audioOutput = null;
       }
     },
@@ -224,7 +216,7 @@
     initialize: function(){
       AudioBase.Model.prototype.initialize.call(this);
 
-      var gainNode = this.audioInput = this.audioOutput = dataflow.audioContext.createGainNode();
+      var gainNode = this.audioInput = this.audioOutput = dataflow.audioContext.createGain();
       var state = this.get("state");
       gainNode.gain.value = state.gain !== undefined ? state.gain : 1.0;
     },

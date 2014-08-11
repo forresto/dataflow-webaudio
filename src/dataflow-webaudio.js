@@ -8,10 +8,12 @@ $(function($) {
   // Setup audio context
   var context;
   if (typeof AudioContext !== "undefined") {
-    context = new AudioContext();
-  } else if (typeof webkitAudioContext !== "undefined") {
-    /*jshint newcap:false*/
-    context = new webkitAudioContext();
+    try {
+      context = new AudioContext();
+    } catch (e) {
+      window.alert("Your browser has ran out of usable WebAudio contexts. Close some pages which use WebAudio and reload.");
+      throw new Error('Unable to instantiate AudioContext');
+    }
   } else {
     window.alert("WebAudio isn't supported in this browser yet :-(");
     throw new Error('AudioContext not supported. :(');

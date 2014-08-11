@@ -17,9 +17,13 @@
 //Originally written by Alessandro Saccoia, Chris Coniglio and Oskar Eriksson
 (function (window) {
     var userContext, userInstance, Tuna = function (context) {
+            if (! window.AudioContext) {
+		window.AudioContext = window.webkitAudioContext;
+   	    }
+
             if(!context) {
                 console.log("tuna.js: Missing audio context! Creating a new context for you.");
-                context = window.webkitAudioContext && (new window.webkitAudioContext());
+                context = window.AudioContext && (new window.AudioContext());
             }
             userContext = context;
             userInstance = this;
@@ -178,10 +182,10 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
         this.filter = userContext.createBiquadFilter();
-        this.output = userContext.createGainNode();
+        this.output = userContext.createGain();
 
         this.activateNode.connect(this.filter);
         this.filter.connect(this.output);
@@ -190,7 +194,7 @@
         this.Q = properties.resonance || this.defaults.Q.value;
         this.filterType = properties.filterType || this.defaults.filterType.value;
         this.gain = properties.gain || this.defaults.gain.value;
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Filter.prototype = Object.create(Super, {
         name: {
@@ -275,18 +279,18 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
         this.convolver = this.newConvolver(properties.impulsePath || "../impulses/impulse_guitar.wav");
-        this.makeupNode = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.makeupNode = userContext.createGain();
+        this.output = userContext.createGain();
 
         this.activateNode.connect(this.convolver.input);
         this.convolver.output.connect(this.makeupNode);
         this.makeupNode.connect(this.output);
 
         this.makeupGain = properties.makeupGain || this.defaults.makeupGain;
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Cabinet.prototype = Object.create(Super, {
         name: {
@@ -332,15 +336,15 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.attenuator = this.activateNode = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.attenuator = this.activateNode = userContext.createGain();
         this.splitter = userContext.createChannelSplitter(2);
-        this.delayL = userContext.createDelayNode();
-        this.delayR = userContext.createDelayNode();
-        this.feedbackGainNodeLR = userContext.createGainNode();
-        this.feedbackGainNodeRL = userContext.createGainNode();
+        this.delayL = userContext.createDelay();
+        this.delayR = userContext.createDelay();
+        this.feedbackGainNodeLR = userContext.createGain();
+        this.feedbackGainNodeRL = userContext.createGain();
         this.merger = userContext.createChannelMerger(2);
-        this.output = userContext.createGainNode();
+        this.output = userContext.createGain();
 
         this.lfoL = new userInstance.LFO({
             target: this.delayL.delayTime,
@@ -372,7 +376,7 @@
         this.attenuator.gain.value = 0.6934; // 1 / (10 ^ (((20 * log10(3)) / 3) / 20))
         this.lfoL.activate(true);
         this.lfoR.activate(true);
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Chorus.prototype = Object.create(Super, {
         name: {
@@ -466,10 +470,10 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
+        this.input = userContext.createGain();
         this.compNode = this.activateNode = userContext.createDynamicsCompressor();
-        this.makeupNode = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.makeupNode = userContext.createGain();
+        this.output = userContext.createGain();
 
         this.compNode.connect(this.makeupNode);
         this.makeupNode.connect(this.output);
@@ -481,7 +485,7 @@
         this.attack = properties.attack || this.defaults.attack.value;
         this.ratio = properties.ratio || this.defaults.ratio.value;
         this.knee = properties.knee || this.defaults.knee.value;
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Compressor.prototype = Object.create(Super, {
         name: {
@@ -624,14 +628,14 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
         this.convolver = userContext.createConvolver();
-        this.dry = userContext.createGainNode();
+        this.dry = userContext.createGain();
         this.filterLow = userContext.createBiquadFilter();
         this.filterHigh = userContext.createBiquadFilter();
-        this.wet = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.wet = userContext.createGain();
+        this.output = userContext.createGain();
 
         this.activateNode.connect(this.filterLow);
         this.activateNode.connect(this.dry);
@@ -647,9 +651,9 @@
         this.buffer = properties.impulse || "../impulses/ir_rev_short.wav";
         this.lowCut = properties.lowCut || this.defaults.lowCut.value;
         this.level = properties.level || this.defaults.level.value;
-        this.filterHigh.type = 0;
-        this.filterLow.type = 1;
-        this.bypass = false;
+        this.filterHigh.type = "lowpass";
+        this.filterLow.type = "highpass";
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Convolver.prototype = Object.create(Super, {
         name: {
@@ -768,14 +772,14 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
-        this.dry = userContext.createGainNode();
-        this.wet = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
+        this.dry = userContext.createGain();
+        this.wet = userContext.createGain();
         this.filter = userContext.createBiquadFilter();
-        this.delay = userContext.createDelayNode();
-        this.feedbackNode = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.delay = userContext.createDelay();
+        this.feedbackNode = userContext.createGain();
+        this.output = userContext.createGain();
 
         this.activateNode.connect(this.delay);
         this.activateNode.connect(this.dry);
@@ -791,8 +795,8 @@
         this.wetLevel = properties.wetLevel || this.defaults.wetLevel.value;
         this.dryLevel = properties.dryLevel || this.defaults.dryLevel.value;
         this.cutoff = properties.cutoff || this.defaults.cutoff.value;
-        this.filter.type = 0;
-        this.bypass = false;
+        this.filter.type = "lowpass";
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Delay.prototype = Object.create(Super, {
         name: {
@@ -888,12 +892,12 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
-        this.inputDrive = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
+        this.inputDrive = userContext.createGain();
         this.waveshaper = userContext.createWaveShaper();
-        this.outputDrive = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.outputDrive = userContext.createGain();
+        this.output = userContext.createGain();
 
         this.activateNode.connect(this.inputDrive);
         this.inputDrive.connect(this.waveshaper);
@@ -905,7 +909,7 @@
         this.outputGain = properties.outputGain || this.defaults.outputGain.value;
         this.curveAmount = properties.curveAmount || this.defaults.curveAmount.value;
         this.algorithmIndex = properties.algorithmIndex || this.defaults.algorithmIndex.value;
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Overdrive.prototype = Object.create(Super, {
         name: {
@@ -1051,15 +1055,15 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
+        this.input = userContext.createGain();
         this.splitter = this.activateNode = userContext.createChannelSplitter(2);
         this.filtersL = [];
         this.filtersR = [];
-        this.feedbackGainNodeL = userContext.createGainNode();
-        this.feedbackGainNodeR = userContext.createGainNode();
+        this.feedbackGainNodeL = userContext.createGain();
+        this.feedbackGainNodeR = userContext.createGain();
         this.merger = userContext.createChannelMerger(2);
-        this.filteredSignal = userContext.createGainNode();
-        this.output = userContext.createGainNode();
+        this.filteredSignal = userContext.createGain();
+        this.output = userContext.createGain();
         this.lfoL = new userInstance.LFO({
             target: this.filtersL,
             callback: this.callback
@@ -1073,8 +1077,8 @@
         while(i--) {
             this.filtersL[i] = userContext.createBiquadFilter();
             this.filtersR[i] = userContext.createBiquadFilter();
-            this.filtersL[i].type = 7;
-            this.filtersR[i].type = 7;
+            this.filtersL[i].type = "allpass";
+            this.filtersR[i].type = "allpass";
         }
         this.input.connect(this.splitter);
         this.input.connect(this.output);
@@ -1098,7 +1102,7 @@
 
         this.lfoL.activate(true);
         this.lfoR.activate(true);
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Phaser.prototype = Object.create(Super, {
         name: {
@@ -1212,8 +1216,8 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.splitter = this.activateNode = userContext.createChannelSplitter(2), this.amplitudeL = userContext.createGainNode(), this.amplitudeR = userContext.createGainNode(), this.merger = userContext.createChannelMerger(2), this.output = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.splitter = this.activateNode = userContext.createChannelSplitter(2), this.amplitudeL = userContext.createGain(), this.amplitudeR = userContext.createGain(), this.merger = userContext.createChannelMerger(2), this.output = userContext.createGain();
         this.lfoL = new userInstance.LFO({
             target: this.amplitudeL.gain,
             callback: pipe
@@ -1240,7 +1244,7 @@
 
         this.lfoL.activate(true);
         this.lfoR.activate(true);
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.Tremolo.prototype = Object.create(Super, {
         name: {
@@ -1313,8 +1317,8 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.activateNode = userContext.createGainNode();
+        this.input = userContext.createGain();
+        this.activateNode = userContext.createGain();
         this.envelopeFollower = new userInstance.EnvelopeFollower({
             target: this,
             callback: function (context, value) {
@@ -1323,7 +1327,7 @@
         });
         this.filterBp = userContext.createBiquadFilter();
         this.filterPeaking = userContext.createBiquadFilter();
-        this.output = userContext.createGainNode();
+        this.output = userContext.createGain();
 
         //Connect AudioNodes
         this.activateNode.connect(this.filterBp);
@@ -1341,7 +1345,7 @@
 
         this.activateNode.gain.value = 2;
         this.envelopeFollower.activate(true);
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.WahWah.prototype = Object.create(Super, {
         name: {
@@ -1470,8 +1474,8 @@
         init: {
             value: function () {
                 this.output.gain.value = 1;
-                this.filterPeaking.type = 5;
-                this.filterBp.type = 2;
+                this.filterPeaking.type = "peaking";
+                this.filterBp.type = "bandpass";
                 this.filterPeaking.frequency.value = 100;
                 this.filterPeaking.gain.value = 20;
                 this.filterPeaking.Q.value = 5;
@@ -1485,8 +1489,8 @@
         if(!properties) {
             properties = this.getDefaults();
         }
-        this.input = userContext.createGainNode();
-        this.jsNode = this.output = userContext.createJavaScriptNode(this.buffersize, 1, 1);
+        this.input = userContext.createGain();
+        this.jsNode = this.output = userContext.createScriptProcessor(this.buffersize, 1, 1);
 
         this.input.connect(this.output);
 
@@ -1620,7 +1624,7 @@
     });
     Tuna.prototype.LFO = function (properties) {
         //Instantiate AudioNode
-        this.output = userContext.createJavaScriptNode(256, 1, 1);
+        this.output = userContext.createScriptProcessor(256, 1, 1);
         this.activateNode = userContext.destination;
 
         //Set Properties
@@ -1631,7 +1635,7 @@
         this.target = properties.target || {};
         this.output.onaudioprocess = this.callback(properties.callback ||
         function () {});
-        this.bypass = false;
+        this.bypass = properties.bypass || false;
     };
     Tuna.prototype.LFO.prototype = Object.create(Super, {
         name: {
